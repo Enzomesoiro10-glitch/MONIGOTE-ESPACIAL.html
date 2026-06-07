@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Monigote Espacial: Ultimate Arcade</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #050510;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            overflow: hidden;
+        }
+        #arcadeCabinet {
+            background: #121224;
+            border: 6px solid #282846;
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 0 35px rgba(138, 43, 226, 0.4), inset 0 0 15px rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #gameHeader {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 0 5px;
+        }
+        #gameTitle {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff007f;
+            text-shadow: 0 0 10px #ff007f;
+            letter-spacing: 1px;
+        }
+        #starsContainer {
+            font-size: 18px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 3px solid #1a1a3a;
+        }
+        canvas {
+            background: linear-gradient(to bottom, #050515, #0f0a22, #180d2d);
+            display: block;
+        }
+        /* HUD Superior */
+        .hud-overlay {
+            position: absolute;
+            top: 15px;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000;
+        }
+        #scoreBoard {
+            left: 20px;
+            font-size: 22px;
+            color: #00ffff;
+        }
+        #livesContainer {
+            right: 20px;
+            display: flex;
+            gap: 5px;
+        }
+        .heart {
+            font-size: 24px;
+            color: #ff3366;
+            filter: drop-shadow(0 0 3px #ff3366);
+            transition: transform 0.2s;
+        }
+        /* Jetpack Fuel Gauge */
+        #fuelGauge {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #ffaa00;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+            pointer-events: none;
+        }
+        #fuelBar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #ff5500, #ffaa00);
+            box-shadow: 0 0 8px #ffaa00;
+            transition: width 0.1s;
+        }
+        /* Screens overlays */
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 850px;
+            height: 480px;
+            background: rgba(8, 8, 20, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        #gameOverScreen {
+            display: none;
+        }
+        #gameOverScreen h1 {
+            color: #ff3366;
+            font-size: 48px;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 15px #ff3366;
+        }
+        /* Tienda Side Panel (Integrada dentro de la pantalla al pausar) */
+        #menuScreen {
+            display: none;
+        }
+        #menuScreen h2 {
+            color: #00ffcc;
+            font-size: 32px;
+            margin: 0 0 20px 0;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+        .shop-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 650px;
+        }
+        .skin-card {
+            background: #171730;
+            border: 2px solid #2a2a5a;
+            border-radius: 8px;
+            padding: 10px;
+            width: 140px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .skin-card:hover {
+            border-color: #00ffcc;
+            background: #202045;
+        }
+        .skin-card.selected {
+            border-color: #ff007f;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+        }
+        .skin-preview {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+            border-radius: 50%;
+            border: 2px dashed #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .skin-name {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .skin-cost {
+            font-size: 11px;
+            color: #ffd700;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #050510;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+        .btn-green { background: #00ffcc; }
+        .btn-green:hover { background: #fff; box-shadow: 0 0 15px #00ffcc; }
+        .btn-magenta { background: #ff007f; color: white; }
+        .btn-magenta:hover { background: #fff; color: #ff007f; box-shadow: 0 0 15px #ff007f; }
+        
+        #pauseBtn {
+            position: absolute;
+            top: 15px;
+            left: 380px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #444;
+            color: #aaa;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            pointer-events: auto;
+            font-family: inherit;
+        }
+        #pauseBtn:hover {
+            color: #fff;
+            border-color: #00ffcc;
+        }
+        .instruction-bar {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #707090;
+            text-align: center;
+            display: flex;
+            gap: 20px;
+        }
+        .instruction-bar b { color: #00ffcc; }
+    </style>
+</head>
+<body>
+
+    <div id="arcadeCabinet">
+        <div id="gameHeader">
+            <span id="gameTitle">🚀 MONIGOTE COSMICO</span>
+            <span id="starsContainer">⭐ ESTRELLAS: <span id="starsCount">0</span></span>
+        </div>
+
+        <div id="gameContainer">
+            <!-- HUD Superior -->
+            <div id="scoreBoard" class="hud-overlay">PUNTOS: <span id="score">0</span></div>
+            <button id="pauseBtn" onclick="toggleMenu()">TIENDA / PAUSA</button>
+            <div id="livesContainer" class="hud-overlay">
+                <span class="heart">❤️</span>
+                <span class="heart">❤️</span>
+                <span class="heart">❤️</span>
+            </div>
+
+            <!-- Jetpack Gauge -->
+            <div id="fuelGauge">
+                <div id="fuelBar"></div>
+            </div>
+
+            <canvas id="gameCanvas" width="850" height="480"></canvas>
+            
+            <!-- Pantalla Fin de Juego -->
+            <div id="gameOverScreen" class="screen-overlay">
+                <h1>GAME OVER</h1>
+                <p>Tu traje espacial se ha desintegrado en el espacio profundo.</p>
+                <p style="font-size: 20px; margin-bottom: 25px;">Puntos conseguidos: <strong id="finalScore" style="color:#00ffff">0</strong></p>
+                <button class="btn btn-green" onclick="resetGame()">Reaparecer</button>
+            </div>
+
+            <!-- Pantalla Menú / Tienda (Pausa) -->
+            <div id="menuScreen" class="screen-overlay">
+                <h2>TIENDA DE TRAJES</h2>
+                <p style="margin-top:-10px; margin-bottom: 20px; color:#aaa;">Usa tus estrellas para desbloquear nuevas skins estilizadas.</p>
+                
+                <div class="shop-container" id="shopContainer">
+                    <!-- Se genera dinámicamente con JS -->
+                </div>
+
+                <button class="btn btn-magenta" onclick="toggleMenu()">Volver al Juego</button>
+            </div>
+        </div>
+        
+        <div class="instruction-bar">
+            <span>Moverse: <b>A/D</b> o <b>←/→</b></span>
+            <span>Saltar / Doble Salto / Jetpack: <b>W</b>, <b>↑</b> o <b>Espacio</b></span>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const starsEl = document.getElementById('starsCount');
+        const finalScoreEl = document.getElementById('finalScore');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const menuScreen = document.getElementById('menuScreen');
+        const fuelGauge = document.getElementById('fuelGauge');
+        const fuelBar = document.getElementById('fuelBar');
+        const hearts = document.querySelectorAll('.heart');
+
+        // Configuración y variables del estado global
+        let gameActive = true;
+        let isPaused = false;
+        let score = 0;
+        let totalStarsCollected = 0;
+        let gameSpeed = 2.2;
+        let backgroundStars = [];
+        let particles = [];
+        let platforms = [];
+        let items = []; // estrellas y jetpacks
+        let hazards = []; // meteoritos y aliens
+        let blackHole = { x: 425, y: -80, radius: 65, pulse: 0, active: true };
+
+        // Datos de Skins / Tienda
+        let activeSkinId = 'default';
+        const skins = [
+            { id: 'default', name: 'Clásico', cost: 0, unlocked: true, colors: { suit: '#ffffff', visor: '#00a8ff', details: '#ffffff' } },
+            { id: 'gold', name: 'Oro Cósmico', cost: 15, unlocked: false, colors: { suit: '#ffd700', visor: '#ff3366', details: '#ffaa00' } },
+            { id: 'neon', name: 'Ciber Neón', cost: 30, unlocked: false, colors: { suit: '#ff00ff', visor: '#00ffff', details: '#3d003d' } },
+            { id: 'alien', name: 'Zorblaxian', cost: 50, unlocked: false, colors: { suit: '#39ff14', visor: '#111111', details: '#1a5c00' } }
+        ];
+
+        // Jugador
+        const player = {
+            x: 180,
+            y: 150,
+            width: 24,
+            height: 42,
+            vy: 0,
+            vx: 0,
+            gravity: 0.45,
+            jumpForce: -10,
+            speed: 5.5,
+            isGrounded: false,
+            canDoubleJump: true,
+            hasJetpack: false,
+            jetpackFuel: 0,
+            lives: 3,
+            invulnerableFrames: 0,
+            onIce: false
+        };
+
+        // Teclado
+        const keys = { left: false, right: false, up: false };
+        let upKeyReleased = true;
+
+        // Estrellas decorativas de fondo
+        for (let i = 0; i < 70; i++) {
+            backgroundStars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2 + 0.5,
+                speed: Math.random() * 0.4 + 0.1
+            });
+        }
+
+        // --- SISTEMA DE ENTRADA ---
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') {
+                keys.up = true;
+                handleJumpPress();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') {
+                keys.up = false;
+                upKeyReleased = true;
+            }
+        });
+
+        function handleJumpPress() {
+            if (!gameActive || isPaused) return;
+
+            if (player.hasJetpack && player.jetpackFuel > 0) {
+                // El Jetpack maneja vuelo continuo en la función update
+                return;
+            }
+
+            if (player.isGrounded) {
+                // Salto Normal
+                player.vy = player.jumpForce;
+                player.isGrounded = false;
+                player.canDoubleJump = true;
+                upKeyReleased = false;
+                spawnParticles(player.x + player.width/2, player.y + player.height, '#ffffff', 8);
+            } else if (player.canDoubleJump && upKeyReleased) {
+                // Doble Salto
+                player.vy = player.jumpForce * 0.9;
+                player.canDoubleJump = false;
+                spawnParticles(player.x + player.width/2, player.y + player.height, '#00ffff', 12);
+            }
+        }
+
+        // --- SISTEMA DE PARTÍCULAS ---
+        function spawnParticles(x, y, color, count = 5, speedMult = 1) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() * 4 - 2) * speedMult,
+                    vy: (Math.random() * 4 - 2) * speedMult,
+                    size: Math.random() * 3.5 + 1.5,
+                    color: color,
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.015
+                });
+            }
+        }
+
+        // --- GENERACIÓN DE ENTIDADES ---
+        function initPlatforms() {
+            platforms = [
+                { x: 100, y: 320, width: 160, height: 25, type: 'normal' },
+                { x: 340, y: 260, width: 130, height: 25, type: 'ice' },
+                { x: 570, y: 290, width: 120, height: 25, type: 'trampoline' },
+                { x: 800, y: 210, width: 130, height: 25, type: 'ghost', ghostTimer: -1 }
+            ];
+            // Poblar objetos sobre las primeras plataformas
+            platforms.forEach((p, idx) => {
+                if(idx > 0) spawnContentsOnPlatform(p);
+            });
+        }
+
+        function spawnContentsOnPlatform(p) {
+            // Estrellas
+            if (Math.random() < 0.65) {
+                items.push({
+                    type: 'star',
+                    x: p.x + p.width/2 + (Math.random() * 40 - 20),
+                    y: p.y - 32,
+                    radius: 8,
+                    pulse: Math.random() * 10
+                });
+            }
+            // Jetpack (poca probabilidad si no tiene uno activo)
+            if (!player.hasJetpack && Math.random() < 0.12) {
+                items.push({
+                    type: 'jetpack',
+                    x: p.x + p.width/2,
+                    y: p.y - 35,
+                    width: 18,
+                    height: 25
+                });
+            }
+            // Aliens (solo en plataformas normales o de hielo, no trampolines)
+            if (p.type !== 'trampoline' && p.type !== 'ghost' && Math.random() < 0.35) {
+                hazards.push({
+                    type: 'alien',
+                    x: p.x + p.width/2,
+                    y: p.y - 20,
+                    width: 20,
+                    height: 20,
+                    swimDir: Math.random() > 0.5 ? 1 : -1,
+                    originX: p.x + p.width/2
+                });
+            }
+        }
+
+        function spawnMeteorite() {
+            if (Math.random() < 0.015) { // probabilidad por frame
+                hazards.push({
+                    type: 'meteorite',
+                    x: canvas.width + 50,
+                    y: Math.random() * (canvas.height - 200),
+                    vx: -(Math.random() * 2 + 3.5),
+                    vy: Math.random() * 1.5 + 1.5,
+                    size: Math.random() * 12 + 8
+                });
+            }
+        }
+
+        // --- ACTUALIZACIÓN DEL JUEGO (LÓGICA) ---
+        function update() {
+            if (!gameActive || isPaused) return;
+
+            // Invulnerabilidad del jugador
+            if (player.invulnerableFrames > 0) {
+                player.invulnerableFrames--;
+            }
+
+            // --- FÍSICA Y MOVIMIENTO JUGADOR ---
+            // Tratar hielo deslizante
+            if (player.onIce) {
+                if (keys.left) player.vx = Math.max(-player.speed, player.vx - 0.25);
+                else if (keys.right) player.vx = Math.min(player.speed, player.vx + 0.25);
+                else player.vx *= 0.96; // Se frena muy despacio
+            } else {
+                if (keys.left) player.vx = -player.speed;
+                else if (keys.right) player.vx = player.speed;
+                else player.vx = 0;
+            }
+
+            // Uso de Jetpack
+            if (player.hasJetpack && keys.up && player.jetpackFuel > 0) {
+                player.vy = -3.8;
+                player.jetpackFuel -= 0.6;
+                // Partículas de propulsión
+                spawnParticles(player.x + player.width/2, player.y + player.height - 2, '#ffaa00', 2, 0.5);
+                if (player.jetpackFuel <= 0) {
+                    player.hasJetpack = false;
+                    fuelGauge.style.display = 'none';
+                } else {
+                    fuelBar.style.width = player.jetpackFuel + '%';
+                }
+            } else {
+                // Gravedad ordinaria
+                player.vy += player.gravity;
+            }
+
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // Retorno de la pantalla
+            player.x -= gameSpeed;
+
+            // Límites laterales de la pantalla
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            // Pérdida por caída
+            if (player.y > canvas.height || player.x + player.width < 0) {
+                handleDamage(true); // Muerte súbita por caída
+            }
+
+            // --- AGUJERO NEGRO (Atracción gravitatoria suave) ---
+            if (blackHole.active) {
+                blackHole.pulse += 0.05;
+                // Posicionar dinámicamente el agujero negro oscilando arriba
+                blackHole.y = -30 + Math.sin(blackHole.pulse * 0.5) * 20;
+                
+                let dx = blackHole.x - (player.x + player.width/2);
+                let dy = blackHole.y - (player.y + player.height/2);
+                let dist = Math.hypot(dx, dy);
+
+                if (dist < 320) {
+                    // Fuerza inversa a la distancia
+                    let force = (1 - dist / 320) * 0.45;
+                    player.vx += (dx / dist) * force;
+                    player.vy += (dy / dist) * force;
+                }
+            }
+
+            // --- PARTICULAS ---
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                if (p.alpha <= 0) particles.splice(idx, 1);
+            });
+
+            // --- PLATAFORMAS ---
+            player.onIce = false;
+            let onAnyPlatform = false;
+
+            platforms.forEach((p) => {
+                p.x -= gameSpeed;
+
+                // Detección de colisión desde arriba
+                if (player.x + player.width > p.x &&
+                    player.x < p.x + p.width &&
+                    player.y + player.height >= p.y &&
+                    player.y + player.height - player.vy <= p.y + 12 &&
+                    player.vy >= 0) {
+                    
+                    player.vy = 0;
+                    player.y = p.y - player.height;
+                    player.isGrounded = true;
+                    player.canDoubleJump = true;
+                    onAnyPlatform = true;
+
+                    if (p.type === 'ice') {
+                        player.onIce = true;
+                    } else if (p.type === 'trampoline') {
+                        player.vy = player.jumpForce * 1.6; // Gran impulso
+                        player.isGrounded = false;
+                        spawnParticles(player.x + player.width/2, player.y + player.height, '#ff0055', 15, 1.5);
+                    } else if (p.type === 'ghost') {
+                        if (p.ghostTimer === -1) {
+                            p.ghostTimer = 90; // 1.5 segundos a 60fps
+                        }
+                    }
+                }
+
+                // Lógica de plataformas fantasma activadas
+                if (p.type === 'ghost' && p.ghostTimer > 0) {
+                    p.ghostTimer--;
+                    if (p.ghostTimer === 0) {
+                        spawnParticles(p.x + p.width/2, p.y + p.height/2, '#aa00ff', 12);
+                        p.active = false; // Se destruye
+                    }
+                }
+            });
+
+            if (!onAnyPlatform) player.isGrounded = false;
+
+            // Filtrar plataformas destruidas o fuera de rango
+            platforms = platforms.filter(p => p.x + p.width > 0 && p.active !== false);
+
+            // Generar nuevas plataformas al final
+            if (platforms.length < 5) {
+                let lastP = platforms[platforms.length - 1];
+                let nextX = lastP.x + lastP.width + (Math.random() * 90 + 80);
+                let nextY = Math.max(160, Math.min(390, lastP.y + (Math.random() * 140 - 70)));
+                let nextWidth = Math.random() * 50 + 90;
+
+                // Elegir tipo aleatorio
+                let rand = Math.random();
+                let type = 'normal';
+                if (rand < 0.25) type = 'ice';
+                else if (rand < 0.45) type = 'trampoline';
+                else if (rand < 0.65) type = 'ghost';
+
+                let newPlatform = { x: nextX, y: nextY, width: nextWidth, height: 25, type: type, ghostTimer: -1 };
+                platforms.push(newPlatform);
+                spawnContentsOnPlatform(newPlatform);
+
+                // Aumentar velocidad progresiva del juego
+                gameSpeed += 0.04;
+            }
+
+            // --- OBJETO / COLECCIONABLES ---
+            items.forEach((item, idx) => {
+                item.x -= gameSpeed;
+
+                // Colisión jugador / item
+                let px = player.x + player.width/2;
+                let py = player.y + player.height/2;
+
+                if (item.type === 'star') {
+                    item.pulse += 0.1;
+                    let dist = Math.hypot(px - item.x, py - item.y);
+                    if (dist < player.width/2 + item.radius) {
+                        items.splice(idx, 1);
+                        totalStarsCollected++;
+                        score += 25;
+                        scoreEl.innerText = score;
+                        starsEl.innerText = totalStarsCollected;
+                        spawnParticles(item.x, item.y, '#ffd700', 10);
+                        updateShopUI(); // Refrescar costes tienda
+                    }
+                } else if (item.type === 'jetpack') {
+                    if (px + player.width/2 > item.x && px - player.width/2 < item.x + item.width &&
+                        py + player.height/2 > item.y && py - player.height/2 < item.y + item.height) {
+                        
+                        items.splice(idx, 1);
+                        player.hasJetpack = true;
+                        player.jetpackFuel = 100;
+                        fuelGauge.style.display = 'block';
+                        fuelBar.style.width = '100%';
+                        spawnParticles(item.x + item.width/2, item.y + item.height/2, '#ff8800', 15);
+                    }
+                }
+            });
+            items = items.filter(item => item.x + 50 > 0);
+
+            // --- OBSTÁCULOS Y PELIGROS ---
+            spawnMeteorite();
+
+            hazards.forEach((h, idx) => {
+                if (h.type === 'meteorite') {
+                    h.x += h.vx;
+                    h.y += h.vy;
+                    // Chispas de fuego constantes
+                    if (Math.random() < 0.3) spawnParticles(h.x, h.y, '#ff4400', 1);
+
+                    // Colisión con jugador
+                    let dist = Math.hypot((player.x + player.width/2) - h.x, (player.y + player.height/2) - h.y);
+                    if (dist < player.width/2 + h.size) {
+                        hazards.splice(idx, 1);
+                        handleDamage();
+                        spawnParticles(h.x, h.y, '#ff0033', 15, 1.5);
+                    }
+                } else if (h.type === 'alien') {
+                    // Movimiento patrulla básico
+                    h.x -= gameSpeed;
+                    h.originX -= gameSpeed;
+                    h.x += h.swimDir * 0.8;
+                    if (Math.abs(h.x - h.originX) > 25) {
+                        h.swimDir *= -1; // dar media vuelta
+                    }
+
+                    // Colisión jugador
+                    if (player.x + player.width > h.x && player.x < h.x + h.width &&
+                        player.y + player.height > h.y && player.y < h.y + h.height) {
+                        
+                        handleDamage();
+                        spawnParticles(h.x + h.width/2, h.y + h.height/2, '#39ff14', 10);
+                        hazards.splice(idx, 1);
+                    }
+                }
+            });
+            hazards = hazards.filter(h => h.x + 100 > 0 && h.y < canvas.height + 100);
+
+            // Estrellas de fondo decorativas continuas
+            backgroundStars.forEach(s => {
+                s.x -= s.speed;
+                if (s.x < 0) s.x = canvas.width;
+            });
+        }
+
+        // --- SISTEMA DE DAÑO Y VIDAS ---
+        function handleDamage(instantKill = false) {
+            if (player.invulnerableFrames > 0 && !instantKill) return;
+
+            if (instantKill) {
+                player.lives = 0;
+            } else {
+                player.lives--;
+                player.invulnerableFrames = 75; // ~1.2s de invulnerabilidad
+                spawnParticles(player.x + player.width/2, player.y + player.height/2, '#ff0033', 25, 2);
+            }
+
+            // Actualizar HUD de corazones
+            updateHeartsUI();
+
+            if (player.lives <= 0) {
+                gameActive = false;
+                finalScoreEl.innerText = score;
+                gameOverScreen.style.display = 'flex';
+                fuelGauge.style.display = 'none';
+            }
+        }
+
+        function updateHeartsUI() {
+            hearts.forEach((heart, idx) => {
+                if (idx < player.lives) {
+                    heart.style.opacity = '1';
+                    heart.style.transform = 'scale(1)';
+                } else {
+                    heart.style.opacity = '0.2';
+                    heart.style.transform = 'scale(0.8)';
+                }
+            });
+        }
+
+        // --- RENDERIZACIÓN ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Estrellas de fondo
+            ctx.fillStyle = '#ffffff';
+            backgroundStars.forEach(s => {
+                ctx.globalAlpha = Math.abs(Math.sin(s.x * 0.005)) * 0.4 + 0.3; // Centelleo
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 2. Agujero Negro (Estética visual)
+            if (blackHole.active) {
+                let radius = blackHole.radius + Math.sin(blackHole.pulse) * 4;
+                let grad = ctx.createRadialGradient(blackHole.x, blackHole.y, 5, blackHole.x, blackHole.y, radius);
+                grad.addColorStop(0, '#000000');
+                grad.addColorStop(0.3, '#100028');
+                grad.addColorStop(0.7, '#48128a');
+                grad.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(blackHole.x, blackHole.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Líneas de vórtice orbitando
+                ctx.strokeStyle = '#9d4edd';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.ellipse(blackHole.x, blackHole.y, radius*0.8, radius * 0.25, -blackHole.pulse * 0.3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // 3. Plataformas
+            platforms.forEach((p) => {
+                let topColor = '#00ffcc'; // normal
+                let bodyColor = '#3a3a5a';
+                let crackColor = '#1d1d35';
+
+                if (p.type === 'ice') {
+                    topColor = '#00ffff';
+                    bodyColor = '#245070';
+                    crackColor = '#0f273b';
+                } else if (p.type === 'trampoline') {
+                    topColor = '#ff0055';
+                    bodyColor = '#5c1d35';
+                } else if (p.type === 'ghost') {
+                    topColor = '#aa00ff';
+                    bodyColor = '#4a125c';
+                    // Desvanecer plataforma si se está destruyendo
+                    if (p.ghostTimer > 0) {
+                        ctx.globalAlpha = (p.ghostTimer % 10 > 5) ? 0.8 : 0.2; // Parpadeo
+                    }
+                }
+
+                // Tapa superior flotante
+                ctx.fillStyle = topColor;
+                ctx.fillRect(p.x, p.y, p.width, 7);
+                
+                // Cuerpo de roca flotante (isla trapezoidal)
+                ctx.fillStyle = bodyColor;
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y + 7);
+                ctx.lineTo(p.x + p.width, p.y + 7);
+                ctx.lineTo(p.x + p.width - 12, p.y + p.height);
+                ctx.lineTo(p.x + 12, p.y + p.height);
+                ctx.closePath();
+                ctx.fill();
+
+                // Adorno de trampolín (muelle visible)
+                if (p.type === 'trampoline') {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x + p.width/2 - 15, p.y + 7);
+                    ctx.lineTo(p.x + p.width/2, p.y + 16);
+                    ctx.lineTo(p.x + p.width/2 + 15, p.y + 7);
+                    ctx.stroke();
+                }
+
+                // Detalles de grieta en la roca
+                if (p.type !== 'trampoline') {
+                    ctx.strokeStyle = crackColor;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x + 25, p.y + 7);
+                    ctx.lineTo(p.x + 35, p.y + 18);
+                    ctx.moveTo(p.x + p.width - 30, p.y + 7);
+                    ctx.lineTo(p.x + p.width - 45, p.y + 15);
+                    ctx.stroke();
+                }
+
+                ctx.globalAlpha = 1.0;
+            });
+
+            // 4. Objetos coleccionables
+            items.forEach((item) => {
+                if (item.type === 'star') {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.shadowBlur = 8 + Math.sin(item.pulse) * 4;
+                    ctx.shadowColor = '#ffd700';
+
+                    ctx.beginPath();
+                    let r = item.radius;
+                    ctx.moveTo(item.x, item.y - r);
+                    ctx.lineTo(item.x + r * 0.35, item.y - r * 0.35);
+                    ctx.lineTo(item.x + r, item.y);
+                    ctx.lineTo(item.x + r * 0.35, item.y + r * 0.35);
+                    ctx.lineTo(item.x, item.y + r);
+                    ctx.lineTo(item.x - r * 0.35, item.y + r * 0.35);
+                    ctx.lineTo(item.x - r, item.y);
+                    ctx.lineTo(item.x - r * 0.35, item.y - r * 0.35);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else if (item.type === 'jetpack') {
+                    // Cuerpo del jetpack flotante
+                    ctx.fillStyle = '#8e8e8e';
+                    ctx.fillRect(item.x, item.y, item.width, item.height);
+                    ctx.fillStyle = '#ff3300'; // Toberas rojas
+                    ctx.fillRect(item.x + 2, item.y + item.height, 4, 3);
+                    ctx.fillRect(item.x + item.width - 6, item.y + item.height, 4, 3);
+                    // Rayas amarillas
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fillRect(item.x, item.y + 6, item.width, 4);
+                }
+            });
+
+            // 5. Obstáculos (Aliens y Meteoritos)
+            hazards.forEach((h) => {
+                if (h.type === 'meteorite') {
+                    ctx.fillStyle = '#e25822';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#e25822';
+                    ctx.beginPath();
+                    ctx.arc(h.x, h.y, h.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Detalles quemados
+                    ctx.fillStyle = '#5c1d04';
+                    ctx.beginPath();
+                    ctx.arc(h.x - h.size*0.3, h.y - h.size*0.2, h.size*0.3, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                } else if (h.type === 'alien') {
+                    // Dibujo de alien estilo retro (glowing octopod)
+                    ctx.fillStyle = '#39ff14';
+                    ctx.shadowBlur = 6;
+                    ctx.shadowColor = '#39ff14';
+                    // Cabeza / domo
+                    ctx.beginPath();
+                    ctx.arc(h.x + h.width/2, h.y + h.height/2, 9, Math.PI, 0);
+                    ctx.fill();
+                    // Patas / tentáculos abajo
+                    ctx.fillRect(h.x + 2, h.y + h.height/2, 3, 10);
+                    ctx.fillRect(h.x + h.width/2 - 1.5, h.y + h.height/2, 3, 10);
+                    ctx.fillRect(h.x + h.width - 5, h.y + h.height/2, 3, 10);
+                    // Ojo cíclope
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(h.x + h.width/2, h.y + h.height/2 - 2, 3, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ff0000';
+                    ctx.beginPath();
+                    ctx.arc(h.x + h.width/2, h.y + h.height/2 - 2, 1, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // 6. Partículas
+            particles.forEach((p) => {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // 7. Renderizar Jugador (Monigote personalizado por Skin)
+            if (player.invulnerableFrames === 0 || Math.floor(player.invulnerableFrames / 4) % 2 === 0) {
+                drawPlayer();
+            }
+        }
+
+        function drawPlayer() {
+            const currentSkin = skins.find(s => s.id === activeSkinId) || skins[0];
+            const px = player.x + player.width / 2;
+            const py = player.y + 13; // Cabeza
+
+            ctx.lineWidth = 3.5;
+
+            // mochila propulsora a la espalda si la tiene activa
+            if (player.hasJetpack) {
+                ctx.fillStyle = '#7a7a7a';
+                ctx.fillRect(player.x - 5, player.y + 14, 8, 20);
+                // pequeña luz indicadora en el jetpack
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(player.x - 4, player.y + 16, 3, 3);
+            }
+
+            // Casco principal (Círculo)
+            ctx.strokeStyle = currentSkin.colors.suit;
+            ctx.fillStyle = currentSkin.colors.suit;
+            ctx.beginPath();
+            ctx.arc(px, py, 11, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Visor interno
+            ctx.fillStyle = currentSkin.colors.visor;
+            ctx.beginPath();
+            let lookOffset = keys.right ? 4 : (keys.left ? -4 : 0);
+            ctx.arc(px + lookOffset, py, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cuerpo (Traje principal)
+            ctx.strokeStyle = currentSkin.colors.suit;
+            ctx.beginPath();
+            ctx.moveTo(px, py + 11);
+            ctx.lineTo(px, py + 26);
+            ctx.stroke();
+
+            // Detalles en el pecho (Color secundario)
+            ctx.fillStyle = currentSkin.colors.details;
+            ctx.beginPath();
+            ctx.arc(px, py + 17, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Brazos
+            ctx.beginPath();
+            if (player.hasJetpack && keys.up) {
+                // Brazos rectos hacia abajo manejando el vuelo
+                ctx.moveTo(px - 11, py + 25);
+                ctx.lineTo(px, py + 15);
+                ctx.lineTo(px + 11, py + 25);
+            } else if (!player.isGrounded) {
+                // En el aire (Brazos alzados de felicidad/acción)
+                ctx.moveTo(px - 14, py + 5);
+                ctx.lineTo(px, py + 14);
+                ctx.lineTo(px + 14, py + 5);
+            } else {
+                // Estático o corriendo
+                let swing = (keys.left || keys.right) ? Math.sin(Date.now() * 0.012) * 4 : 0;
+                ctx.moveTo(px - 11, py + 16 + swing);
+                ctx.lineTo(px, py + 14);
+                ctx.lineTo(px + 11, py + 16 - swing);
+            }
+            ctx.stroke();
+
+            // Piernas
+            ctx.beginPath();
+            if (!player.isGrounded) {
+                // Flexionadas flotando
+                ctx.moveTo(px - 9, py + 38);
+                ctx.lineTo(px - 4, py + 26);
+                ctx.lineTo(px, py + 26);
+                ctx.lineTo(px + 4, py + 26);
+                ctx.lineTo(px + 9, py + 38);
+            } else if (keys.left || keys.right) {
+                // Animación corriendo
+                let runSwing = Math.sin(Date.now() * 0.016) * 8;
+                ctx.moveTo(px - runSwing, py + 41);
+                ctx.lineTo(px - 1, py + 26);
+                ctx.lineTo(px + 1, py + 26);
+                ctx.lineTo(px + runSwing, py + 41);
+            } else {
+                // Quietecito
+                ctx.moveTo(px - 6, py + 41);
+                ctx.lineTo(px, py + 26);
+                ctx.lineTo(px + 6, py + 41);
+            }
+            ctx.stroke();
+        }
+
+        // --- BUCLE PRINCIPAL DEL JUEGO ---
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- SISTEMA DE TIENDA Y MENÚ ---
+        function initShop() {
+            const container = document.getElementById('shopContainer');
+            container.innerHTML = '';
+
+            skins.forEach(skin => {
+                const card = document.createElement('div');
+                card.className = `skin-card ${skin.id === activeSkinId ? 'selected' : ''}`;
+                card.id = `card-${skin.id}`;
+                card.onclick = () => selectSkin(skin.id);
+
+                // Crear previsualización visual del color de la skin en HTML
+                card.innerHTML = `
+                    <div class="skin-preview" style="background-color: ${skin.colors.suit}; border-color: ${skin.colors.visor}">
+                        <div style="width: 14px; height: 14px; border-radius: 50%; background: ${skin.colors.visor}"></div>
+                    </div>
+                    <div class="skin-name">${skin.name}</div>
+                    <div class="skin-cost" id="cost-${skin.id}">${skin.unlocked ? 'ADQUIRIDO' : '🪙 ' + skin.cost + ' Estrellas'}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectSkin(id) {
+            const skin = skins.find(s => s.id === id);
+            if (!skin) return;
+
+            if (skin.unlocked) {
+                activeSkinId = id;
+                // Marcar seleccionado
+                document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected'));
+                document.getElementById(`card-${id}`).classList.add('selected');
+                spawnParticles(canvas.width/2, canvas.height/2 + 100, skin.colors.suit, 30, 1.2);
+            } else {
+                // Intentar comprar
+                if (totalStarsCollected >= skin.cost) {
+                    totalStarsCollected -= skin.cost;
+                    skin.unlocked = true;
+                    activeSkinId = id;
+                    
+                    starsEl.innerText = totalStarsCollected;
+                    
+                    // Actualizar UI
+                    initShop();
+                    spawnParticles(canvas.width/2, canvas.height/2, '#ffd700', 40, 2);
+                } else {
+                    // No tienes fondos
+                    const costLabel = document.getElementById(`cost-${id}`);
+                    costLabel.style.color = '#ff0033';
+                    setTimeout(() => costLabel.style.color = '#ffd700', 600);
+                }
+            }
+        }
+
+        function updateShopUI() {
+            skins.forEach(s => {
+                const label = document.getElementById(`cost-${s.id}`);
+                if (label && !s.unlocked) {
+                    label.innerText = `🪙 ${s.cost} Estrellas`;
+                }
+            });
+        }
+
+        function toggleMenu() {
+            if (!gameActive) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                menuScreen.style.display = 'flex';
+                initShop();
+            } else {
+                menuScreen.style.display = 'none';
+            }
+        }
+
+        // --- REINICIAR / REAPARECER ---
+        function resetGame() {
+            player.x = 180;
+            player.y = 150;
+            player.vy = 0;
+            player.vx = 0;
+            player.isGrounded = false;
+            player.canDoubleJump = true;
+            player.hasJetpack = false;
+            player.jetpackFuel = 0;
+            player.lives = 3;
+            player.invulnerableFrames = 0;
+            player.onIce = false;
+
+            score = 0;
+            gameSpeed = 2.2;
+            scoreEl.innerText = score;
+
+            items = [];
+            hazards = [];
+            particles = [];
+            
+            initPlatforms();
+            updateHeartsUI();
+
+            gameOverScreen.style.display = 'none';
+            menuScreen.style.display = 'none';
+            fuelGauge.style.display = 'none';
+            isPaused = false;
+            gameActive = true;
+        }
+
+        // --- INICIAR ---
+        initPlatforms();
+        initShop();
+        gameLoop();
+    </script>
+</body>
+</html>
